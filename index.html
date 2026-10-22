@@ -1,0 +1,2884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="数独" />
+  <meta name="theme-color" content="#f4f2ec" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>数独 · 静心一局</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f2ec;
+      --surface: #fffefb;
+      --surface-soft: #f5f6f8;
+      --ink: #1c2430;
+      --ink-2: #46505f;
+      --muted: #6b7585;
+      --faint: #aab1bc;
+      --line: #d3d7dd;
+      --line-soft: #e6e8eb;
+      --grid-line: #d9dee6;
+      --line-strong: #26303d;
+      --accent: #2f6bff;
+      --accent-2: #1e54df;
+      --accent-soft: #e7eeff;
+      --accent-wash: #f4f8ff;
+      --peer: #f3f7ff;
+      --same: #dfe9ff;
+      --selected: #ccdcff;
+      --danger: #df434d;
+      --danger-soft: #ffecee;
+      --success: #0e9672;
+      --success-soft: #e3f7f0;
+      --gold: #e7ad35;
+      --overlay-bg: rgba(255, 254, 251, 0.8);
+      --modal-backdrop: rgba(12, 18, 29, 0.5);
+      --board-shadow: 0 24px 46px -27px rgba(25, 40, 70, 0.48), 0 5px 16px rgba(25, 40, 70, 0.08);
+      --soft-shadow: 0 2px 8px rgba(30, 42, 64, 0.045);
+      --modal-shadow: 0 32px 80px -24px rgba(10, 18, 34, 0.5);
+      --glow-a: rgba(112, 153, 255, 0.2);
+      --glow-b: rgba(255, 201, 128, 0.16);
+      --page-x: 42px;
+      --chrome-h: 264px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --surface: #171c24;
+        --surface-soft: #1e242e;
+        --ink: #f2f5fa;
+        --ink-2: #c8cfda;
+        --muted: #8c96a7;
+        --faint: #5d6878;
+        --line: #343c49;
+        --line-soft: #272e39;
+        --grid-line: #333b48;
+        --line-strong: #a7b2c4;
+        --accent: #6f9bff;
+        --accent-2: #8bafff;
+        --accent-soft: #1d2c4d;
+        --accent-wash: #172136;
+        --peer: #1a2230;
+        --same: #233451;
+        --selected: #2b426b;
+        --danger: #ff7078;
+        --danger-soft: #3a1e24;
+        --success: #4ed4ac;
+        --success-soft: #13332b;
+        --gold: #f0c35a;
+        --overlay-bg: rgba(13, 17, 23, 0.78);
+        --modal-backdrop: rgba(2, 5, 10, 0.64);
+        --board-shadow: 0 24px 50px -26px rgba(0, 0, 0, 0.8), 0 5px 18px rgba(0, 0, 0, 0.32);
+        --soft-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+        --modal-shadow: 0 34px 90px -20px rgba(0, 0, 0, 0.82);
+        --glow-a: rgba(45, 91, 190, 0.26);
+        --glow-b: rgba(140, 88, 26, 0.1);
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      color: var(--ink);
+      background:
+        radial-gradient(90% 62% at 100% -4%, var(--glow-a), transparent 68%),
+        radial-gradient(76% 58% at -8% 104%, var(--glow-b), transparent 72%),
+        var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    button {
+      margin: 0;
+      border: 0;
+      font: inherit;
+      color: inherit;
+      background: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.38;
+      pointer-events: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .icon {
+      display: block;
+      width: 18px;
+      height: 18px;
+      flex: none;
+      pointer-events: none;
+    }
+
+    .sprite {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0 auto;
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-right: max(14px, env(safe-area-inset-right));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      padding-left: max(14px, env(safe-area-inset-left));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* ---------- Header ---------- */
+
+    .topbar {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: #fff;
+      background: linear-gradient(145deg, #3d79ff 0%, #1d50db 100%);
+      box-shadow: 0 8px 18px -8px rgba(42, 96, 235, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    .logo .icon {
+      width: 21px;
+      height: 21px;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.05;
+      font-weight: 750;
+      letter-spacing: 0.02em;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 650;
+      letter-spacing: 0.24em;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip {
+      height: 34px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      box-shadow: var(--soft-shadow);
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .chip .icon {
+      width: 13px;
+      height: 13px;
+    }
+
+    .chip-timer {
+      color: var(--ink-2);
+      padding: 0 11px;
+    }
+
+    .chip-timer:active {
+      background: var(--surface-soft);
+    }
+
+    .chip-timer:disabled {
+      opacity: 1;
+    }
+
+    .chip-timer .play-tri,
+    .is-paused .chip-timer .pause-bars {
+      display: none;
+    }
+
+    .is-paused .chip-timer .play-tri {
+      display: block;
+    }
+
+    .chip-errors {
+      min-width: 44px;
+      justify-content: center;
+    }
+
+    .chip-errors.has-errors {
+      color: var(--danger);
+      border-color: var(--danger-soft);
+      background: var(--danger-soft);
+    }
+
+    .chip-errors.bump {
+      animation: bump 0.28s ease;
+    }
+
+    .round-btn {
+      width: 38px;
+      height: 38px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line-soft);
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--ink-2);
+      box-shadow: var(--soft-shadow);
+      transition: transform 0.12s ease, background-color 0.12s ease;
+    }
+
+    .round-btn .icon {
+      width: 17px;
+      height: 17px;
+    }
+
+    .round-btn:active {
+      transform: scale(0.93);
+      background: var(--surface-soft);
+    }
+
+    /* ---------- Difficulty ---------- */
+
+    .difficulty-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .segmented {
+      flex: 1;
+      height: 38px;
+      padding: 3px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 3px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: var(--surface-soft);
+    }
+
+    .segmented button {
+      min-width: 0;
+      border-radius: 9px;
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      transition: color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 1px 5px rgba(26, 38, 60, 0.1);
+    }
+
+    .segmented button:not([aria-pressed="true"]):active {
+      background: rgba(127, 140, 160, 0.08);
+    }
+
+    .new-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      color: var(--accent);
+      border-color: var(--accent-soft);
+      background: var(--accent-soft);
+      box-shadow: none;
+    }
+
+    /* ---------- Board ---------- */
+
+    .board-area {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .board-frame {
+      position: relative;
+      display: inline-block;
+      flex: none;
+      padding: 5px;
+      border: 1px solid var(--line-soft);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--board-shadow);
+    }
+
+    .board {
+      --board-size: calc(100vw - var(--page-x));
+      --board-size: min(calc(100vw - var(--page-x)), calc(100vh - var(--chrome-h)), 430px);
+      width: var(--board-size);
+      height: var(--board-size);
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      grid-template-rows: repeat(9, minmax(0, 1fr));
+      overflow: hidden;
+      border: 1.5px solid var(--line-strong);
+      border-radius: 11px;
+      background: var(--surface);
+      touch-action: manipulation;
+    }
+
+    .cell {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-right: 1px solid var(--grid-line);
+      border-bottom: 1px solid var(--grid-line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: var(--value-size, 24px);
+      font-weight: 580;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      transition: background-color 0.13s ease, color 0.13s ease, box-shadow 0.13s ease;
+      touch-action: manipulation;
+    }
+
+    .cell:nth-child(9n) {
+      border-right: 0;
+    }
+
+    .cell:nth-child(n + 73) {
+      border-bottom: 0;
+    }
+
+    .cell.line-r {
+      border-right: 2px solid var(--line-strong);
+    }
+
+    .cell.line-b {
+      border-bottom: 2px solid var(--line-strong);
+    }
+
+    .cell-value {
+      pointer-events: none;
+      transform: translateY(-0.01em);
+    }
+
+    .cell-notes {
+      position: absolute;
+      inset: 3px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      color: var(--muted);
+      font-size: var(--note-size, 8px);
+      font-weight: 650;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .cell-notes i {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: normal;
+      opacity: 0;
+      transform: scale(0.72);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .cell-notes i.on {
+      opacity: 0.92;
+      transform: none;
+    }
+
+    .cell.given {
+      color: var(--ink);
+      font-weight: 710;
+    }
+
+    .cell.user .cell-value {
+      color: var(--accent);
+      font-weight: 640;
+    }
+
+    .cell.hinted .cell-value {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .cell.wrong .cell-value {
+      color: var(--danger);
+    }
+
+    .cell.wrong {
+      background: var(--danger-soft);
+    }
+
+    .cell.peer {
+      background: var(--peer);
+    }
+
+    .cell.same {
+      background: var(--same);
+    }
+
+    .cell.selected {
+      z-index: 2;
+      background: var(--selected);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .cell.pop .cell-value {
+      animation: cell-pop 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.35);
+    }
+
+    .cell.hint-pop .cell-value {
+      animation: hint-pop 0.7s ease;
+    }
+
+    .cell.shake {
+      animation: cell-shake 0.3s ease;
+    }
+
+    .cell:focus-visible {
+      z-index: 3;
+      outline: 2px solid var(--accent);
+      outline-offset: -3px;
+    }
+
+    .board-overlay {
+      position: absolute;
+      inset: 5px;
+      z-index: 5;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      text-align: center;
+      background: var(--overlay-bg);
+      -webkit-backdrop-filter: blur(12px) saturate(0.8);
+      backdrop-filter: blur(12px) saturate(0.8);
+    }
+
+    .overlay-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .overlay-sub {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 11.5px;
+      line-height: 1.5;
+    }
+
+    .spinner {
+      width: 26px;
+      height: 26px;
+      margin-bottom: 14px;
+      border: 2.5px solid var(--accent-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .pause-mark {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 13px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .pause-mark .icon {
+      width: 22px;
+      height: 22px;
+    }
+
+    .overlay-button {
+      height: 40px;
+      margin-top: 16px;
+      padding: 0 20px;
+      border-radius: 12px;
+      color: #fff;
+      background: var(--accent);
+      font-size: 13px;
+      font-weight: 650;
+      box-shadow: 0 8px 20px -10px rgba(47, 107, 255, 0.7);
+    }
+
+    .overlay-button:active {
+      transform: scale(0.98);
+      background: var(--accent-2);
+    }
+
+    .is-paused .tools,
+    .is-paused .numpad {
+      opacity: 0.42;
+      pointer-events: none;
+    }
+
+    /* ---------- Tools & number pad ---------- */
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .tool {
+      position: relative;
+      height: 44px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: 1px solid var(--line-soft);
+      border-radius: 13px;
+      color: var(--muted);
+      background: var(--surface);
+      box-shadow: var(--soft-shadow);
+      transition: transform 0.12s ease, color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .tool .tool-icon {
+      display: grid;
+      place-items: center;
+      height: 16px;
+    }
+
+    .tool .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .tool-label {
+      font-size: 10px;
+      font-weight: 650;
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .tool:active {
+      transform: scale(0.96);
+      background: var(--surface-soft);
+    }
+
+    .tool[aria-pressed="true"] {
+      color: var(--accent);
+      border-color: var(--accent-soft);
+      background: var(--accent-soft);
+    }
+
+    .tool-dot {
+      position: absolute;
+      top: 7px;
+      right: 9px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--success);
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .tool[aria-pressed="true"] .tool-dot {
+      opacity: 1;
+      transform: none;
+    }
+
+    .badge {
+      position: absolute;
+      top: 4px;
+      right: 7px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-size: 9px;
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .num {
+      height: 54px;
+      min-width: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line-soft);
+      border-radius: 13px;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: var(--soft-shadow);
+      font-size: clamp(20px, 6.2vw, 26px);
+      font-weight: 620;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      transition: transform 0.1s ease, color 0.14s ease, background-color 0.14s ease;
+    }
+
+    .num:active {
+      transform: scale(0.93);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .notes-mode .num {
+      color: var(--accent);
+    }
+
+    /* ---------- Modal ---------- */
+
+    .modal-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      padding: 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: var(--modal-backdrop);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      animation: fade-in 0.22s ease both;
+    }
+
+    .modal-card {
+      position: relative;
+      width: min(100%, 400px);
+      max-height: calc(100vh - 32px);
+      max-height: calc(100svh - 32px);
+      padding: 27px 22px 20px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--line-soft);
+      border-radius: 27px;
+      background: var(--surface);
+      box-shadow: var(--modal-shadow);
+      animation: sheet-in 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.04) both;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 13px;
+      right: 13px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--muted);
+      background: var(--surface-soft);
+    }
+
+    .modal-close .icon {
+      width: 15px;
+      height: 15px;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 750;
+      line-height: 1;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .modal-card h2 {
+      margin: 0;
+      font-size: 27px;
+      line-height: 1.15;
+      font-weight: 760;
+      letter-spacing: -0.025em;
+    }
+
+    .modal-lead {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.68;
+    }
+
+    .help-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 19px 0 22px;
+    }
+
+    .help-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+    }
+
+    .help-num {
+      flex: none;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+    }
+
+    .help-item strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .help-item p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .win-mark {
+      width: 58px;
+      height: 58px;
+      margin-bottom: 17px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--success);
+      background: var(--success-soft);
+      animation: mark-in 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) both;
+    }
+
+    .win-mark .icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 20px 0 12px;
+    }
+
+    .result-grid > div {
+      padding: 12px 7px 11px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: var(--surface-soft);
+      text-align: center;
+    }
+
+    .result-grid span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .result-grid strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 730;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .best-line {
+      min-height: 38px;
+      margin: 0;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed var(--accent-soft);
+      border-radius: 12px;
+      color: var(--accent);
+      background: var(--accent-wash);
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .modal-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .modal-actions.split {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .btn {
+      height: 50px;
+      min-width: 0;
+      padding: 0 16px;
+      border-radius: 15px;
+      font-size: 14.5px;
+      font-weight: 680;
+      letter-spacing: 0.01em;
+      transition: transform 0.12s ease, background-color 0.14s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.985);
+    }
+
+    .btn.primary {
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 10px 24px -12px rgba(47, 107, 255, 0.9);
+    }
+
+    .btn.primary:active {
+      background: var(--accent-2);
+    }
+
+    .btn.secondary {
+      color: var(--ink);
+      border: 1px solid var(--line-soft);
+      background: var(--surface-soft);
+    }
+
+    .btn.block {
+      width: 100%;
+    }
+
+    .confirm-copy {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    .confirm-copy strong {
+      color: var(--ink-2);
+      font-weight: 680;
+    }
+
+    /* ---------- Toast & confetti ---------- */
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(142px + env(safe-area-inset-bottom));
+      z-index: 300;
+      max-width: calc(100vw - 40px);
+      padding: 9px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      color: #fff;
+      background: rgba(22, 28, 38, 0.93);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.55);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .modal-open .toast {
+      opacity: 0;
+      transition: none;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -16px;
+      width: 7px;
+      height: 12px;
+      border-radius: 2px;
+      opacity: 0;
+      animation-name: confetti-fall;
+      animation-timing-function: cubic-bezier(0.18, 0.68, 0.45, 1);
+      animation-fill-mode: forwards;
+    }
+
+    /* ---------- Responsive ---------- */
+
+    @supports (height: 100svh) {
+      .board {
+        --board-size: min(calc(100vw - var(--page-x)), calc(100svh - var(--chrome-h)), 430px);
+      }
+    }
+
+    @media (max-height: 720px) and (orientation: portrait) {
+      :root {
+        --page-x: 38px;
+        --chrome-h: 228px;
+      }
+
+      .app {
+        gap: 8px;
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+
+      .topbar {
+        min-height: 40px;
+      }
+
+      .logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+      }
+
+      .logo .icon {
+        width: 19px;
+        height: 19px;
+      }
+
+      .brand h1 {
+        font-size: 19px;
+      }
+
+      .brand p {
+        font-size: 8px;
+        margin-top: 2px;
+      }
+
+      .chip {
+        height: 31px;
+        padding: 0 9px;
+        font-size: 11.5px;
+      }
+
+      .chip-errors {
+        min-width: 40px;
+      }
+
+      .round-btn {
+        width: 34px;
+        height: 34px;
+      }
+
+      .new-btn {
+        width: 34px;
+        height: 34px;
+      }
+
+      .segmented {
+        height: 34px;
+        border-radius: 11px;
+      }
+
+      .segmented button {
+        border-radius: 8px;
+        font-size: 12px;
+      }
+
+      .tool {
+        height: 40px;
+        border-radius: 11px;
+      }
+
+      .num {
+        height: 48px;
+        border-radius: 11px;
+      }
+    }
+
+    @media (orientation: landscape) and (max-height: 560px) and (min-width: 520px) {
+      :root {
+        --page-x: calc(306px + env(safe-area-inset-left) + env(safe-area-inset-right));
+        --chrome-h: 96px;
+      }
+
+      .app {
+        max-width: 1000px;
+        min-height: 100vh;
+        min-height: 100svh;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 240px;
+        grid-template-rows: auto auto auto auto;
+        grid-template-areas:
+          "header header"
+          "board difficulty"
+          "board tools"
+          "board numpad";
+        align-content: center;
+        column-gap: 18px;
+        row-gap: 8px;
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+
+      .topbar {
+        grid-area: header;
+        min-height: 40px;
+      }
+
+      .brand-copy p {
+        display: none;
+      }
+
+      .difficulty-row {
+        grid-area: difficulty;
+        align-self: end;
+      }
+
+      .board-area {
+        grid-area: board;
+        align-self: center;
+      }
+
+      .tools {
+        grid-area: tools;
+      }
+
+      .numpad {
+        grid-area: numpad;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+      }
+
+      .num {
+        height: auto;
+        min-height: 36px;
+        font-size: 20px;
+        border-radius: 10px;
+      }
+
+      .tool {
+        height: 38px;
+      }
+
+      .toast {
+        bottom: max(14px, env(safe-area-inset-bottom));
+      }
+    }
+
+    @media (min-width: 700px) {
+      .modal-layer {
+        align-items: center;
+        padding: 24px;
+      }
+
+      .modal-card {
+        max-height: calc(100vh - 48px);
+      }
+    }
+
+    @media (hover: hover) {
+      .cell:hover {
+        background: var(--accent-wash);
+      }
+
+      .cell.peer:hover {
+        background: var(--accent-soft);
+      }
+
+      .cell.selected:hover {
+        background: var(--selected);
+      }
+
+      .tool:hover {
+        color: var(--ink-2);
+        background: var(--surface-soft);
+      }
+
+      .tool[aria-pressed="true"]:hover {
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .num:hover {
+        color: var(--accent);
+        background: var(--accent-wash);
+      }
+
+      .segmented button:not([aria-pressed="true"]):hover {
+        color: var(--ink-2);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* ---------- Keyframes ---------- */
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes cell-pop {
+      0% { opacity: 0.15; transform: scale(0.55); }
+      70% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes hint-pop {
+      0% { transform: scale(0.65); opacity: 0.2; }
+      40% { transform: scale(1.18); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes cell-shake {
+      0%, 100% { transform: translateX(0); }
+      22% { transform: translateX(-2.5px); }
+      48% { transform: translateX(2.5px); }
+      72% { transform: translateX(-1.5px); }
+    }
+
+    @keyframes bump {
+      0%, 100% { transform: scale(1); }
+      40% { transform: scale(1.12); }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes sheet-in {
+      from { opacity: 0; transform: translateY(24px) scale(0.975); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes mark-in {
+      from { opacity: 0; transform: scale(0.55) rotate(-12deg); }
+      to { opacity: 1; transform: scale(1) rotate(0); }
+    }
+
+    @keyframes confetti-fall {
+      0% { opacity: 1; transform: translate3d(0, -10vh, 0) rotate(0deg); }
+      100% { opacity: 0; transform: translate3d(var(--drift, 0px), 112vh, 0) rotate(760deg); }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-grid" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+        <path d="M9 3v18M15 3v18M3 9h18M3 15h18"></path>
+      </g>
+    </symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24">
+      <g fill="currentColor" stroke="none">
+        <rect x="7" y="5" width="3.6" height="14" rx="1.2"></rect>
+        <rect x="13.4" y="5" width="3.6" height="14" rx="1.2"></rect>
+      </g>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <path fill="currentColor" stroke="none" d="M8.2 5.8c0-.8.9-1.3 1.6-.9l9 5.9c.7.4.7 1.4 0 1.8l-9 5.9c-.7.4-1.6-.1-1.6-.9V5.8Z"></path>
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="8.5"></circle>
+        <path d="M12 8.2v4.5M12 16.2h.01"></path>
+      </g>
+    </symbol>
+    <symbol id="i-help" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="8.6"></circle>
+        <path d="M9.6 9.1a2.5 2.5 0 0 1 4.9.7c0 1.7-2.5 2-2.5 3.5"></path>
+        <path d="M12 16.8h.01"></path>
+      </g>
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 11.5a8 8 0 1 1-2.3-5.6"></path>
+        <path d="M20 3.8v5.1h-5.1"></path>
+      </g>
+    </symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 20h4.1L19 9.1a2.9 2.9 0 0 0-4.1-4.1L4 16v4Z"></path>
+        <path d="m13.6 6.4 4 4"></path>
+      </g>
+    </symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.2 6.8 4.5 11.5l4.7 4.7"></path>
+        <path d="M4.8 11.5h8.6a6 6 0 0 1 6 6v.2"></path>
+      </g>
+    </symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 15.1c-1.3-1.1-2.1-2.8-2.1-4.6a5.6 5.6 0 0 1 11.2 0c0 1.8-.8 3.5-2.1 4.6-.6.5-.9 1.2-.9 1.9H9.4c0-.7-.3-1.4-.9-1.9Z"></path>
+        <path d="M9.8 20h4.4M10.3 17h3.4"></path>
+      </g>
+    </symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m4.4 14.7 7.9-9.2a2 2 0 0 1 2.8-.2l3.4 2.9a2 2 0 0 1 .2 2.8l-6.4 7.4H7.6l-3.2-2.7a2 2 0 0 1 0-1Z"></path>
+        <path d="M10.4 8.1 16 13M11.5 20H20"></path>
+      </g>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+        <path d="m6 6 12 12M18 6 6 18"></path>
+      </g>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"></path>
+    </symbol>
+  </svg>
+
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg class="icon"><use href="#i-grid"></use></svg>
+        </div>
+        <div class="brand-copy">
+          <h1>数独</h1>
+          <p>SUDOKU</p>
+        </div>
+      </div>
+      <div class="status">
+        <button class="chip chip-timer" id="timerChip" type="button" aria-label="暂停游戏">
+          <svg class="icon pause-bars"><use href="#i-pause"></use></svg>
+          <svg class="icon play-tri"><use href="#i-play"></use></svg>
+          <span id="timer">00:00</span>
+        </button>
+        <div class="chip chip-errors" id="mistakesChip" title="错误次数">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+          <span id="mistakes" aria-label="错误 0 次">0</span>
+        </div>
+        <button class="round-btn" id="helpBtn" type="button" aria-label="查看玩法">
+          <svg class="icon"><use href="#i-help"></use></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="difficulty-row" aria-label="选择难度">
+      <div class="segmented" role="group" aria-label="难度">
+        <button type="button" data-diff="easy" aria-pressed="false">简单</button>
+        <button type="button" data-diff="medium" aria-pressed="true">中等</button>
+        <button type="button" data-diff="hard" aria-pressed="false">困难</button>
+      </div>
+      <button class="round-btn new-btn" id="newGameBtn" type="button" aria-label="开始新游戏">
+        <svg class="icon"><use href="#i-refresh"></use></svg>
+      </button>
+    </section>
+
+    <main class="board-area">
+      <div class="board-frame">
+        <div class="board" id="board" aria-label="数独棋盘" aria-busy="true"></div>
+        <div class="board-overlay" id="loadingOverlay" role="status" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="overlay-title" id="loadingTitle">正在生成谜题</p>
+          <p class="overlay-sub" id="loadingSub">为你准备一局好题</p>
+        </div>
+        <div class="board-overlay" id="pauseOverlay" hidden>
+          <div class="pause-mark" aria-hidden="true">
+            <svg class="icon"><use href="#i-pause"></use></svg>
+          </div>
+          <p class="overlay-title">已暂停</p>
+          <p class="overlay-sub">时间已为你停住</p>
+          <button class="overlay-button" id="resumeBtn" type="button">继续游戏</button>
+        </div>
+      </div>
+    </main>
+
+    <section class="tools" aria-label="辅助工具">
+      <button class="tool" id="notesBtn" type="button" aria-pressed="false" aria-label="笔记模式">
+        <span class="tool-icon"><svg class="icon"><use href="#i-pencil"></use></svg></span>
+        <span class="tool-label">笔记</span>
+        <span class="tool-dot" aria-hidden="true"></span>
+      </button>
+      <button class="tool" id="undoBtn" type="button" aria-label="撤销上一步">
+        <span class="tool-icon"><svg class="icon"><use href="#i-undo"></use></svg></span>
+        <span class="tool-label">撤销</span>
+      </button>
+      <button class="tool" id="hintBtn" type="button" aria-label="提示">
+        <span class="tool-icon"><svg class="icon"><use href="#i-bulb"></use></svg></span>
+        <span class="tool-label">提示</span>
+        <span class="badge" id="hintBadge">3</span>
+      </button>
+      <button class="tool" id="eraseBtn" type="button" aria-label="擦除当前格">
+        <span class="tool-icon"><svg class="icon"><use href="#i-eraser"></use></svg></span>
+        <span class="tool-label">擦除</span>
+      </button>
+    </section>
+
+    <section class="numpad" id="numpad" role="group" aria-label="数字键盘">
+      <button class="num" type="button" data-num="1" aria-label="填入数字 1">1</button>
+      <button class="num" type="button" data-num="2" aria-label="填入数字 2">2</button>
+      <button class="num" type="button" data-num="3" aria-label="填入数字 3">3</button>
+      <button class="num" type="button" data-num="4" aria-label="填入数字 4">4</button>
+      <button class="num" type="button" data-num="5" aria-label="填入数字 5">5</button>
+      <button class="num" type="button" data-num="6" aria-label="填入数字 6">6</button>
+      <button class="num" type="button" data-num="7" aria-label="填入数字 7">7</button>
+      <button class="num" type="button" data-num="8" aria-label="填入数字 8">8</button>
+      <button class="num" type="button" data-num="9" aria-label="填入数字 9">9</button>
+    </section>
+  </div>
+
+  <!-- Help -->
+  <div class="modal-layer" id="helpLayer" hidden>
+    <div class="modal-backdrop" id="helpBackdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <button class="modal-close" id="helpClose" type="button" aria-label="关闭玩法说明">
+        <svg class="icon"><use href="#i-close"></use></svg>
+      </button>
+      <p class="eyebrow">玩法</p>
+      <h2 id="helpTitle">三分钟上手</h2>
+      <p class="modal-lead">让每一行、每一列和每个 3×3 宫里，都恰好出现一次数字 1–9。</p>
+      <div class="help-list">
+        <div class="help-item">
+          <span class="help-num">01</span>
+          <div>
+            <strong>先选格，再填数</strong>
+            <p>点亮空格，再点底部数字。填错会标红并计入错误次数，不影响继续游戏。</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-num">02</span>
+          <div>
+            <strong>卡住时用笔记</strong>
+            <p>开启「笔记」，把候选数字写进格子。每行、列、宫会自动帮你排除同数。</p>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-num">03</span>
+          <div>
+            <strong>提示、撤销、暂停</strong>
+            <p>每局都有提示次数；点错可以撤销，点计时器可以随时暂停。</p>
+          </div>
+        </div>
+      </div>
+      <button class="btn primary block" id="helpDone" type="button">知道了</button>
+    </div>
+  </div>
+
+  <!-- New game confirmation -->
+  <div class="modal-layer" id="confirmLayer" hidden>
+    <div class="modal-backdrop" id="confirmBackdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <p class="eyebrow">新游戏</p>
+      <h2 id="confirmTitle">重新开始？</h2>
+      <p class="confirm-copy" id="confirmCopy">当前这一局的进度不会保留。</p>
+      <div class="modal-actions split">
+        <button class="btn secondary" id="confirmCancel" type="button">继续这局</button>
+        <button class="btn primary" id="confirmNew" type="button">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win -->
+  <div class="modal-layer" id="winLayer" hidden>
+    <div class="modal-backdrop" id="winBackdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+      <div class="win-mark" aria-hidden="true">
+        <svg class="icon"><use href="#i-check"></use></svg>
+      </div>
+      <p class="eyebrow" id="winKicker">完成挑战</p>
+      <h2 id="winTitle">这一局，完成了。</h2>
+      <p class="modal-lead" id="winLead">专注的每一分钟，都算数。</p>
+      <div class="result-grid">
+        <div><span>难度</span><strong id="winDifficulty">中等</strong></div>
+        <div><span>用时</span><strong id="winTime">00:00</strong></div>
+        <div><span>错误</span><strong id="winMistakes">0</strong></div>
+      </div>
+      <p class="best-line" id="bestLine">已记录本局成绩</p>
+      <div class="modal-actions">
+        <button class="btn primary block" id="playAgainBtn" type="button">再来一局</button>
+        <button class="btn secondary block" id="closeWinBtn" type="button">看看棋盘</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* =====================================================================
+         Sudoku engine
+         ===================================================================== */
+
+      const SudokuCore = (function () {
+        const ALL = 0x1ff;
+        const rowOf = (i) => (i / 9) | 0;
+        const colOf = (i) => i % 9;
+        const boxOf = (i) => (((i / 27) | 0) * 3 + ((i % 9) / 3) | 0);
+
+        function shuffle(list) {
+          for (let i = list.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = list[i];
+            list[i] = list[j];
+            list[j] = tmp;
+          }
+          return list;
+        }
+
+        function digitOfBit(bit) {
+          return 32 - Math.clz32(bit);
+        }
+
+        function generateSolvedGrid() {
+          const grid = new Uint8Array(81);
+          const rows = new Uint16Array(9);
+          const cols = new Uint16Array(9);
+          const boxes = new Uint16Array(9);
+
+          function fill(pos) {
+            if (pos === 81) return true;
+            const r = rowOf(pos);
+            const c = colOf(pos);
+            const b = boxOf(pos);
+            let available = ALL & ~(rows[r] | cols[c] | boxes[b]);
+            if (!available) return false;
+
+            const candidates = [];
+            while (available) {
+              const bit = available & -available;
+              candidates.push(bit);
+              available ^= bit;
+            }
+            shuffle(candidates);
+
+            for (let k = 0; k < candidates.length; k++) {
+              const bit = candidates[k];
+              grid[pos] = digitOfBit(bit);
+              rows[r] |= bit;
+              cols[c] |= bit;
+              boxes[b] |= bit;
+              if (fill(pos + 1)) return true;
+              rows[r] ^= bit;
+              cols[c] ^= bit;
+              boxes[b] ^= bit;
+              grid[pos] = 0;
+            }
+            return false;
+          }
+
+          fill(0);
+          return grid;
+        }
+
+        // Count solutions up to `limit`, using minimum-remaining-values search.
+        function countSolutions(source, limit) {
+          const max = limit || 2;
+          const grid = Uint8Array.from(source);
+          const rows = new Uint16Array(9);
+          const cols = new Uint16Array(9);
+          const boxes = new Uint16Array(9);
+          let filled = 0;
+
+          for (let i = 0; i < 81; i++) {
+            const value = grid[i];
+            if (!value) continue;
+            const bit = 1 << (value - 1);
+            const r = rowOf(i);
+            const c = colOf(i);
+            const b = boxOf(i);
+            rows[r] |= bit;
+            cols[c] |= bit;
+            boxes[b] |= bit;
+            filled++;
+          }
+
+          let solutions = 0;
+
+          function search() {
+            if (filled === 81) {
+              solutions++;
+              return solutions >= max;
+            }
+
+            let best = -1;
+            let bestMask = 0;
+            let bestCount = 10;
+
+            for (let i = 0; i < 81; i++) {
+              if (grid[i]) continue;
+              const r = rowOf(i);
+              const c = colOf(i);
+              const b = boxOf(i);
+              const available = ALL & ~(rows[r] | cols[c] | boxes[b]);
+              if (!available) return false;
+              let n = 0;
+              let x = available;
+              while (x) {
+                x &= x - 1;
+                n++;
+              }
+              if (n < bestCount) {
+                bestCount = n;
+                best = i;
+                bestMask = available;
+                if (n === 1) break;
+              }
+            }
+
+            if (best < 0) return false;
+            const r = rowOf(best);
+            const c = colOf(best);
+            const b = boxOf(best);
+            let mask = bestMask;
+
+            while (mask) {
+              const bit = mask & -mask;
+              mask ^= bit;
+              grid[best] = digitOfBit(bit);
+              rows[r] |= bit;
+              cols[c] |= bit;
+              boxes[b] |= bit;
+              filled++;
+
+              const reachedLimit = search();
+
+              filled--;
+              rows[r] ^= bit;
+              cols[c] ^= bit;
+              boxes[b] ^= bit;
+              grid[best] = 0;
+
+              if (reachedLimit) return true;
+            }
+            return false;
+          }
+
+          search();
+          return solutions;
+        }
+
+        function digPuzzle(targetClues) {
+          const solution = generateSolvedGrid();
+          const puzzle = solution.slice();
+          let clues = 81;
+
+          // Rotational symmetry usually looks calmer on a board. Leave a
+          // one-clue gap for the single-cell pass, which can hit odd targets.
+          const order = shuffle(Array.from({ length: 81 }, (_, i) => i));
+          for (let k = 0; k < order.length; k++) {
+            if (clues <= targetClues || clues - 2 < targetClues) break;
+            const i = order[k];
+            const j = 80 - i;
+            if (!puzzle[i] || !puzzle[j]) continue;
+
+            if (i === j) {
+              // The centre cell has no symmetric partner.
+              const centre = puzzle[i];
+              puzzle[i] = 0;
+              if (countSolutions(puzzle, 2) === 1) {
+                clues -= 1;
+              } else {
+                puzzle[i] = centre;
+              }
+              continue;
+            }
+
+            const a = puzzle[i];
+            const b = puzzle[j];
+            puzzle[i] = 0;
+            puzzle[j] = 0;
+
+            if (countSolutions(puzzle, 2) === 1) {
+              clues -= 2;
+            } else {
+              puzzle[i] = a;
+              puzzle[j] = b;
+            }
+          }
+
+          // If the symmetric pass stops early, dig single cells for the target.
+          if (clues > targetClues) {
+            const singles = shuffle(Array.from({ length: 81 }, (_, i) => i));
+            for (let k = 0; k < singles.length && clues > targetClues; k++) {
+              const i = singles[k];
+              if (!puzzle[i]) continue;
+              const value = puzzle[i];
+              puzzle[i] = 0;
+              if (countSolutions(puzzle, 2) === 1) {
+                clues--;
+              } else {
+                puzzle[i] = value;
+              }
+            }
+          }
+
+          return { puzzle: puzzle, solution: solution, clues: clues };
+        }
+
+        function generatePuzzle(targetClues) {
+          let best = null;
+
+          // Hard boards occasionally stop one clue above target. A fresh
+          // board is cheap to make, so try a few times for a precise result.
+          for (let attempt = 0; attempt < 6; attempt++) {
+            const result = digPuzzle(targetClues);
+            if (!best || result.clues < best.clues) best = result;
+            if (result.clues <= targetClues) return result;
+          }
+
+          return best;
+        }
+
+        return {
+          generatePuzzle: generatePuzzle,
+          countSolutions: countSolutions
+        };
+      })();
+
+      /* =====================================================================
+         Game state
+         ===================================================================== */
+
+      const DIFFICULTIES = {
+        easy: { label: "简单", clues: 41, hints: 5 },
+        medium: { label: "中等", clues: 33, hints: 3 },
+        hard: { label: "困难", clues: 27, hints: 2 }
+      };
+      const STORAGE_KEY = "sudoku.best.v1";
+
+      const state = {
+        status: "loading",
+        difficulty: "medium",
+        puzzle: null,
+        solution: null,
+        board: null,
+        notes: null,
+        hinted: new Set(),
+        selected: -1,
+        notesMode: false,
+        mistakes: 0,
+        hintsLeft: 0,
+        initialHints: 0,
+        history: [],
+        elapsed: 0
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+      const appEl = $("#app");
+      const boardEl = $("#board");
+      const timerEl = $("#timer");
+      const timerChip = $("#timerChip");
+      const mistakesEl = $("#mistakes");
+      const mistakesChip = $("#mistakesChip");
+      const helpBtn = $("#helpBtn");
+      const newGameBtn = $("#newGameBtn");
+      const notesBtn = $("#notesBtn");
+      const undoBtn = $("#undoBtn");
+      const hintBtn = $("#hintBtn");
+      const hintBadge = $("#hintBadge");
+      const eraseBtn = $("#eraseBtn");
+      const numpad = $("#numpad");
+      const loadingOverlay = $("#loadingOverlay");
+      const pauseOverlay = $("#pauseOverlay");
+      const resumeBtn = $("#resumeBtn");
+      const helpLayer = $("#helpLayer");
+      const confirmLayer = $("#confirmLayer");
+      const winLayer = $("#winLayer");
+      const toastEl = $("#toast");
+      const confettiEl = $("#confetti");
+      const difficultyButtons = Array.from(document.querySelectorAll("[data-diff]"));
+      const numberButtons = Array.from(document.querySelectorAll("[data-num]"));
+
+      const cellEls = [];
+      const valueEls = [];
+      const noteEls = [];
+
+      let timerAccumMs = 0;
+      let timerAnchor = 0;
+      let timerInterval = 0;
+      let gameToken = 0;
+      let activeModal = null;
+      let lastFocusedElement = null;
+      let helpResumeOnClose = false;
+      let confirmResumeOnCancel = false;
+      let pendingDifficulty = null;
+      let toastTimer = 0;
+      let winModalTimer = 0;
+
+      /* =====================================================================
+         Board construction & rendering
+         ===================================================================== */
+
+      function buildBoard() {
+        const fragment = document.createDocumentFragment();
+
+        for (let i = 0; i < 81; i++) {
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "cell";
+          cell.dataset.index = String(i);
+          cell.setAttribute("aria-label", "第 " + (rowOf(i) + 1) + " 行，第 " + (colOf(i) + 1) + " 列");
+
+          const value = document.createElement("span");
+          value.className = "cell-value";
+
+          const notes = document.createElement("span");
+          notes.className = "cell-notes";
+          notes.setAttribute("aria-hidden", "true");
+
+          const noteItems = [];
+          for (let n = 0; n < 9; n++) {
+            const note = document.createElement("i");
+            notes.appendChild(note);
+            noteItems.push(note);
+          }
+
+          cell.appendChild(value);
+          cell.appendChild(notes);
+          cell.addEventListener("click", () => handleCellClick(i));
+
+          cellEls.push(cell);
+          valueEls.push(value);
+          noteEls.push(noteItems);
+          fragment.appendChild(cell);
+        }
+
+        boardEl.appendChild(fragment);
+      }
+
+      function rowOf(i) {
+        return (i / 9) | 0;
+      }
+
+      function colOf(i) {
+        return i % 9;
+      }
+
+      function boxOf(i) {
+        return (((i / 27) | 0) * 3 + ((i % 9) / 3) | 0);
+      }
+
+      function isLocked(index) {
+        return !state.puzzle || state.puzzle[index] !== 0 || state.hinted.has(index);
+      }
+
+      function currentNotes(index) {
+        return state.notes ? state.notes[index] : 0;
+      }
+
+      function renderBoard() {
+        if (!state.board || !state.puzzle || !state.solution) return;
+
+        const selected = state.selected;
+        const hasSelection = selected >= 0;
+        const selectedRow = hasSelection ? rowOf(selected) : -1;
+        const selectedCol = hasSelection ? colOf(selected) : -1;
+        const selectedBox = hasSelection ? boxOf(selected) : -1;
+        const selectedValue = hasSelection ? state.board[selected] : 0;
+        const firstFocusable = selected >= 0 ? selected : firstEditableIndex();
+
+        for (let i = 0; i < 81; i++) {
+          const cell = cellEls[i];
+          const value = state.board[i];
+          const given = state.puzzle[i] !== 0;
+          const hinted = state.hinted.has(i);
+          const wrong = value !== 0 && !given && value !== state.solution[i];
+          const classes = ["cell"];
+          const r = rowOf(i);
+          const c = colOf(i);
+
+          if (c === 2 || c === 5) classes.push("line-r");
+          if (r === 2 || r === 5) classes.push("line-b");
+          if (given) classes.push("given");
+          else if (hinted) classes.push("hinted");
+          else if (value) classes.push("user");
+          if (wrong) classes.push("wrong");
+
+          if (hasSelection) {
+            if (i === selected) {
+              classes.push("selected");
+            } else if (
+              r === selectedRow ||
+              c === selectedCol ||
+              boxOf(i) === selectedBox
+            ) {
+              classes.push("peer");
+            }
+            if (selectedValue && i !== selected && value === selectedValue) {
+              classes.push("same");
+            }
+          }
+
+          cell.className = classes.join(" ");
+          cell.tabIndex = i === firstFocusable ? 0 : -1;
+
+          valueEls[i].textContent = value ? String(value) : "";
+          const mask = value ? 0 : currentNotes(i);
+          const noteItems = noteEls[i];
+          const noteList = [];
+
+          for (let n = 0; n < 9; n++) {
+            const on = (mask & (1 << n)) !== 0;
+            noteItems[n].textContent = on ? String(n + 1) : "";
+            noteItems[n].classList.toggle("on", on);
+            if (on) noteList.push(String(n + 1));
+          }
+
+          let label = "第 " + (r + 1) + " 行，第 " + (c + 1) + " 列，";
+          if (value) {
+            if (given) label += "题目数字 " + value;
+            else if (hinted) label += "提示数字 " + value;
+            else label += "已填 " + value;
+            if (wrong) label += "，错误";
+          } else if (noteList.length) {
+            label += "空格，笔记 " + noteList.join(" ");
+          } else {
+            label += "空格";
+          }
+          cell.setAttribute("aria-label", label);
+        }
+      }
+
+      function firstEditableIndex() {
+        if (!state.puzzle) return 0;
+        for (let i = 0; i < 81; i++) {
+          if (state.puzzle[i] === 0 && !state.hinted.has(i)) return i;
+        }
+        return 0;
+      }
+
+      function selectCell(index, focus) {
+        if (state.status === "loading" || state.status === "paused") return;
+        state.selected = index;
+        renderBoard();
+        updateControls();
+        if (focus) {
+          cellEls[index].focus({ preventScroll: true });
+        }
+      }
+
+      function handleCellClick(index) {
+        if (state.status === "loading" || state.status === "paused") return;
+        haptic(4);
+        selectCell(index, false);
+      }
+
+      function updateBoardMetrics() {
+        const width = boardEl.getBoundingClientRect().width;
+        if (!width) return;
+        const cell = width / 9;
+        const valueSize = Math.max(17, Math.min(32, cell * 0.69));
+        const noteSize = Math.max(7, Math.min(11, cell * 0.255));
+        boardEl.style.setProperty("--value-size", valueSize.toFixed(1) + "px");
+        boardEl.style.setProperty("--note-size", noteSize.toFixed(1) + "px");
+      }
+
+      /* =====================================================================
+         UI state
+         ===================================================================== */
+
+      function updateTimerLabel() {
+        const time = formatTime(state.elapsed);
+        timerEl.textContent = time;
+
+        if (state.status === "playing") {
+          timerChip.setAttribute("aria-label", "暂停游戏，已用时 " + time);
+        } else if (state.status === "paused") {
+          timerChip.setAttribute("aria-label", "继续游戏，已用时 " + time);
+        } else {
+          timerChip.setAttribute("aria-label", "游戏用时 " + time);
+        }
+      }
+
+      function updateStats() {
+        mistakesEl.textContent = String(state.mistakes);
+        mistakesEl.setAttribute("aria-label", "错误 " + state.mistakes + " 次");
+        mistakesChip.classList.toggle("has-errors", state.mistakes > 0);
+      }
+
+      function updateControls() {
+        const playing = state.status === "playing";
+        const selected = state.selected;
+        const canEditSelected = selected >= 0 && !isLocked(selected);
+        const canErase =
+          playing &&
+          canEditSelected &&
+          (state.board[selected] !== 0 || currentNotes(selected) !== 0);
+
+        notesBtn.disabled = !playing;
+        notesBtn.setAttribute("aria-pressed", state.notesMode ? "true" : "false");
+        notesBtn.setAttribute(
+          "aria-label",
+          state.notesMode ? "关闭笔记模式" : "开启笔记模式"
+        );
+
+        undoBtn.disabled = !playing || state.history.length === 0;
+        hintBtn.disabled = !playing || state.hintsLeft <= 0;
+        hintBtn.setAttribute(
+          "aria-label",
+          "提示，剩余 " + Math.max(0, state.hintsLeft) + " 次"
+        );
+        hintBadge.textContent = String(Math.max(0, state.hintsLeft));
+        eraseBtn.disabled = !canErase;
+
+        numberButtons.forEach((button, index) => {
+          button.disabled = !playing;
+          button.setAttribute(
+            "aria-label",
+            (state.notesMode ? "标记笔记 " : "填入数字 ") + (index + 1)
+          );
+        });
+
+        difficultyButtons.forEach((button) => {
+          button.disabled = state.status === "loading";
+        });
+        newGameBtn.disabled = state.status === "loading";
+        helpBtn.disabled = state.status === "loading";
+        timerChip.disabled = !(playing || state.status === "paused");
+
+        appEl.classList.toggle("notes-mode", state.notesMode && playing);
+        appEl.classList.toggle("is-paused", state.status === "paused");
+      }
+
+      function syncDifficultyButtons() {
+        difficultyButtons.forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            button.dataset.diff === state.difficulty ? "true" : "false"
+          );
+        });
+      }
+
+      function renderAll() {
+        renderBoard();
+        updateStats();
+        updateControls();
+        updateTimerLabel();
+      }
+
+      /* =====================================================================
+         Timer
+         ===================================================================== */
+
+      function elapsedMs() {
+        return timerAccumMs + (timerAnchor ? performance.now() - timerAnchor : 0);
+      }
+
+      function startTimer() {
+        if (timerAnchor) return;
+        timerAnchor = performance.now();
+        clearInterval(timerInterval);
+        timerInterval = window.setInterval(() => {
+          if (state.status !== "playing") return;
+          state.elapsed = Math.floor(elapsedMs() / 1000);
+          updateTimerLabel();
+        }, 250);
+      }
+
+      function freezeTimer() {
+        if (timerAnchor) {
+          timerAccumMs += performance.now() - timerAnchor;
+          timerAnchor = 0;
+        }
+        clearInterval(timerInterval);
+        timerInterval = 0;
+        state.elapsed = Math.floor(timerAccumMs / 1000);
+        updateTimerLabel();
+      }
+
+      function resetTimer() {
+        clearInterval(timerInterval);
+        timerInterval = 0;
+        timerAccumMs = 0;
+        timerAnchor = 0;
+        state.elapsed = 0;
+        updateTimerLabel();
+      }
+
+      function formatTime(totalSeconds) {
+        const seconds = Math.max(0, Math.floor(totalSeconds));
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        const pad = (n) => (n < 10 ? "0" + n : String(n));
+        return h ? h + ":" + pad(m) + ":" + pad(s) : pad(m) + ":" + pad(s);
+      }
+
+      /* =====================================================================
+         Pause / help / modals
+         ===================================================================== */
+
+      function pauseGame(auto, hideOverlay) {
+        if (state.status !== "playing") return;
+        hideToast();
+        freezeTimer();
+        state.status = "paused";
+        pauseOverlay.hidden = hideOverlay === true;
+        const title = pauseOverlay.querySelector(".overlay-title");
+        if (title) title.textContent = auto ? "已为你暂停" : "已暂停";
+        updateControls();
+        if (!document.hidden) {
+          window.setTimeout(() => {
+            if (state.status === "paused" && !document.hidden) {
+              resumeBtn.focus({ preventScroll: true });
+            }
+          }, 60);
+        }
+      }
+
+      function resumeGame() {
+        if (state.status !== "paused") return;
+        pauseOverlay.hidden = true;
+        state.status = "playing";
+        startTimer();
+        updateControls();
+        const target = state.selected >= 0 ? cellEls[state.selected] : cellEls[firstEditableIndex()];
+        if (target) target.focus({ preventScroll: true });
+      }
+
+      function openModal(layer, focusTarget) {
+        if (!layer) return;
+        hideToast();
+        closeAllModals(false);
+        lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        activeModal = layer;
+        layer.hidden = false;
+        document.body.classList.add("modal-open");
+        window.setTimeout(() => {
+          if (activeModal === layer) {
+            const target = focusTarget || layer.querySelector("button");
+            if (target) target.focus({ preventScroll: true });
+          }
+        }, 80);
+      }
+
+      function closeModal(layer, restoreFocus) {
+        if (!layer) return;
+        layer.hidden = true;
+        if (activeModal === layer) activeModal = null;
+
+        const stillOpen = document.querySelector(".modal-layer:not([hidden])");
+        if (!stillOpen) {
+          document.body.classList.remove("modal-open");
+        }
+
+        if (restoreFocus !== false && lastFocusedElement) {
+          try {
+            lastFocusedElement.focus({ preventScroll: true });
+          } catch (error) {
+            /* Focus target may have vanished. */
+          }
+        }
+      }
+
+      function closeAllModals(restoreFocus) {
+        [helpLayer, confirmLayer, winLayer].forEach((layer) => {
+          if (layer && !layer.hidden) {
+            layer.hidden = true;
+          }
+        });
+        activeModal = null;
+        document.body.classList.remove("modal-open");
+        if (restoreFocus === false) lastFocusedElement = null;
+      }
+
+      function openHelp() {
+        if (state.status === "loading") return;
+        helpResumeOnClose = state.status === "playing";
+        if (helpResumeOnClose) pauseGame(false, true);
+        openModal(helpLayer, $("#helpClose"));
+      }
+
+      function closeHelp() {
+        const shouldResume = helpResumeOnClose;
+        helpResumeOnClose = false;
+        closeModal(helpLayer);
+        if (shouldResume && state.status === "paused") {
+          resumeGame();
+        }
+      }
+
+      function openConfirm(difficulty) {
+        pendingDifficulty = difficulty;
+        const info = DIFFICULTIES[difficulty];
+        const copy = $("#confirmCopy");
+        copy.innerHTML =
+          "当前「<strong>" +
+          DIFFICULTIES[state.difficulty].label +
+          "</strong>」这一局的进度不会保留。";
+        confirmResumeOnCancel = state.status === "playing";
+        if (confirmResumeOnCancel) pauseGame(false, true);
+        const title = $("#confirmTitle");
+        title.textContent = difficulty === state.difficulty ? "重新开始？" : "换一局？";
+        openModal(confirmLayer, $("#confirmCancel"));
+      }
+
+      function cancelConfirm() {
+        const shouldResume = confirmResumeOnCancel;
+        confirmResumeOnCancel = false;
+        pendingDifficulty = null;
+        closeModal(confirmLayer);
+        if (shouldResume && state.status === "paused") {
+          resumeGame();
+        }
+      }
+
+      function confirmNewGame() {
+        const difficulty = pendingDifficulty || state.difficulty;
+        pendingDifficulty = null;
+        confirmResumeOnCancel = false;
+        closeAllModals(false);
+        startNewGame(difficulty);
+      }
+
+      /* =====================================================================
+         New game
+         ===================================================================== */
+
+      function hasProgress() {
+        return (
+          state.history.length > 0 ||
+          state.hintsLeft < state.initialHints ||
+          state.elapsed > 2
+        );
+      }
+
+      function requestNewGame(difficulty) {
+        if (state.status === "loading") return;
+        if (difficulty === state.difficulty && state.status !== "won" && !hasProgress()) {
+          startNewGame(difficulty);
+          return;
+        }
+        if (state.status !== "won" && hasProgress()) {
+          openConfirm(difficulty);
+          return;
+        }
+        closeAllModals(false);
+        startNewGame(difficulty);
+      }
+
+      function startNewGame(difficulty) {
+        const key = DIFFICULTIES[difficulty] ? difficulty : "medium";
+        const token = ++gameToken;
+
+        window.clearTimeout(winModalTimer);
+        confettiEl.textContent = "";
+        hideToast();
+        closeAllModals(false);
+        pendingDifficulty = null;
+        helpResumeOnClose = false;
+        confirmResumeOnCancel = false;
+
+        resetTimer();
+        state.status = "loading";
+        state.difficulty = key;
+        state.puzzle = null;
+        state.solution = null;
+        state.board = null;
+        state.notes = null;
+        state.hinted = new Set();
+        state.selected = -1;
+        state.notesMode = false;
+        state.mistakes = 0;
+        state.hintsLeft = DIFFICULTIES[key].hints;
+        state.initialHints = DIFFICULTIES[key].hints;
+        state.history = [];
+        state.elapsed = 0;
+
+        appEl.classList.remove("is-paused", "notes-mode", "is-won");
+        pauseOverlay.hidden = true;
+        loadingOverlay.hidden = false;
+        boardEl.setAttribute("aria-busy", "true");
+        $("#loadingTitle").textContent = "正在生成谜题";
+        $("#loadingSub").textContent = "为你准备一局好题";
+        syncDifficultyButtons();
+        updateStats();
+        updateTimerLabel();
+        updateControls();
+
+        // Let the spinner paint before the synchronous puzzle generation.
+        window.setTimeout(() => {
+          if (token !== gameToken) return;
+
+          let generated;
+          try {
+            generated = SudokuCore.generatePuzzle(DIFFICULTIES[key].clues);
+          } catch (error) {
+            console.error(error);
+            $("#loadingTitle").textContent = "生成失败";
+            $("#loadingSub").textContent = "请点上方新游戏按钮重试";
+            state.status = "error";
+            boardEl.setAttribute("aria-busy", "false");
+            updateControls();
+            return;
+          }
+
+          if (token !== gameToken) return;
+
+          state.puzzle = generated.puzzle;
+          state.solution = generated.solution;
+          state.board = generated.puzzle.slice();
+          state.notes = new Uint16Array(81);
+          state.hinted = new Set();
+          state.history = [];
+          state.mistakes = 0;
+          state.selected = firstEditableIndex();
+          state.elapsed = 0;
+          state.status = "playing";
+
+          loadingOverlay.hidden = true;
+          boardEl.setAttribute("aria-busy", "false");
+          appEl.classList.remove("is-loading");
+          renderAll();
+          updateBoardMetrics();
+          startTimer();
+
+          window.setTimeout(updateBoardMetrics, 60);
+        }, 140);
+      }
+
+      /* =====================================================================
+         Moves
+         ===================================================================== */
+
+      function pushHistory() {
+        if (!state.board || !state.notes) return;
+        state.history.push({
+          board: state.board.slice(),
+          notes: state.notes.slice(),
+          hinted: new Set(state.hinted),
+          selected: state.selected
+        });
+        if (state.history.length > 100) state.history.shift();
+      }
+
+      function noteMaskForPeers(index, value) {
+        const bit = 1 << (value - 1);
+        const r = rowOf(index);
+        const c = colOf(index);
+        const b = boxOf(index);
+
+        for (let j = 0; j < 81; j++) {
+          if (j === index) continue;
+          if (rowOf(j) === r || colOf(j) === c || boxOf(j) === b) {
+            if (state.notes[j] & bit) {
+              state.notes[j] &= ~bit;
+            }
+          }
+        }
+      }
+
+      function inputNumber(value) {
+        if (state.status !== "playing") return;
+        const index = state.selected;
+        if (index < 0) {
+          showToast("先点选一个空格");
+          return;
+        }
+        if (isLocked(index)) {
+          animateCell(index, "shake");
+          haptic(10);
+          return;
+        }
+
+        if (state.notesMode) {
+          if (state.board[index] !== 0) {
+            animateCell(index, "shake");
+            showToast("先擦除数字，再记笔记");
+            return;
+          }
+          pushHistory();
+          state.notes[index] ^= 1 << (value - 1);
+          renderBoard();
+          updateControls();
+          haptic(5);
+          return;
+        }
+
+        if (state.board[index] === value) return;
+
+        pushHistory();
+        state.board[index] = value;
+        state.notes[index] = 0;
+
+        if (value === state.solution[index]) {
+          noteMaskForPeers(index, value);
+          haptic(8);
+          renderAll();
+          animateCell(index, "pop");
+        } else {
+          state.mistakes++;
+          haptic(14);
+          renderAll();
+          animateCell(index, "shake");
+          bumpMistakes();
+        }
+
+        checkWin();
+      }
+
+      function eraseSelected() {
+        if (state.status !== "playing") return;
+        const index = state.selected;
+        if (index < 0 || isLocked(index)) return;
+        if (state.board[index] === 0 && state.notes[index] === 0) return;
+
+        pushHistory();
+        state.board[index] = 0;
+        state.notes[index] = 0;
+        renderAll();
+        haptic(6);
+      }
+
+      function undoMove() {
+        if (state.status !== "playing" || state.history.length === 0) return;
+        const snapshot = state.history.pop();
+        state.board = snapshot.board.slice();
+        state.notes = snapshot.notes.slice();
+        state.hinted = new Set(snapshot.hinted);
+        state.selected = snapshot.selected;
+        renderAll();
+        haptic(6);
+        showToast("已撤销上一步");
+      }
+
+      function useHint() {
+        if (state.status !== "playing" || state.hintsLeft <= 0) return;
+
+        function needsHelp(index) {
+          return (
+            state.puzzle[index] === 0 &&
+            !state.hinted.has(index) &&
+            state.board[index] !== state.solution[index]
+          );
+        }
+
+        let target = state.selected;
+        if (target < 0 || !needsHelp(target)) {
+          const candidates = [];
+          for (let i = 0; i < 81; i++) {
+            if (needsHelp(i)) candidates.push(i);
+          }
+          if (!candidates.length) {
+            showToast("这一局已经填满啦");
+            return;
+          }
+          target = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        pushHistory();
+        state.board[target] = state.solution[target];
+        state.notes[target] = 0;
+        state.hinted.add(target);
+        state.hintsLeft--;
+        noteMaskForPeers(target, state.solution[target]);
+        state.selected = target;
+
+        renderAll();
+        animateCell(target, "hint-pop");
+        haptic(10);
+        checkWin();
+      }
+
+      function toggleNotes() {
+        if (state.status !== "playing") return;
+        state.notesMode = !state.notesMode;
+        updateControls();
+        haptic(5);
+      }
+
+      function animateCell(index, animationClass) {
+        const cell = cellEls[index];
+        if (!cell) return;
+        cell.classList.remove("pop", "shake", "hint-pop");
+        void cell.offsetWidth;
+        cell.classList.add(animationClass);
+        const clear = () => cell.classList.remove(animationClass);
+        cell.addEventListener("animationend", clear, { once: true });
+        window.setTimeout(clear, 900);
+      }
+
+      function bumpMistakes() {
+        mistakesChip.classList.remove("bump");
+        void mistakesChip.offsetWidth;
+        mistakesChip.classList.add("bump");
+        window.setTimeout(() => mistakesChip.classList.remove("bump"), 320);
+      }
+
+      function haptic(pattern) {
+        try {
+          if (navigator.vibrate) navigator.vibrate(pattern);
+        } catch (error) {
+          /* Vibration is a nice-to-have. */
+        }
+      }
+
+      /* =====================================================================
+         Win
+         ===================================================================== */
+
+      function checkWin() {
+        if (state.status !== "playing") return;
+        for (let i = 0; i < 81; i++) {
+          if (state.board[i] !== state.solution[i]) return;
+        }
+        winGame();
+      }
+
+      function winGame() {
+        state.status = "won";
+        freezeTimer();
+        appEl.classList.add("is-won");
+        updateControls();
+
+        const difficulty = DIFFICULTIES[state.difficulty];
+        const previousBest = readBestTimes()[state.difficulty];
+        const isRecord = !previousBest || state.elapsed < previousBest;
+        let bestMessage;
+
+        if (isRecord) {
+          const times = readBestTimes();
+          times[state.difficulty] = state.elapsed;
+          writeBestTimes(times);
+          if (previousBest) {
+            bestMessage = "新纪录！比之前快了 " + formatTime(previousBest - state.elapsed) + "。";
+          } else {
+            bestMessage = "首次完成「" + difficulty.label + "」，已记录为最佳成绩。";
+          }
+        } else {
+          bestMessage = "「" + difficulty.label + "」最佳成绩 " + formatTime(previousBest) + "。";
+        }
+
+        $("#winKicker").textContent = state.mistakes === 0 ? "完美通关" : "完成挑战";
+        $("#winTitle").textContent =
+          state.mistakes === 0 ? "零失误，漂亮。" : "这一局，完成了。";
+        $("#winLead").textContent =
+          state.mistakes === 0
+            ? "每一步都干净利落，保持这份专注。"
+            : "专注的每一分钟，都算数。";
+        $("#winDifficulty").textContent = difficulty.label;
+        $("#winTime").textContent = formatTime(state.elapsed);
+        $("#winMistakes").textContent = String(state.mistakes);
+        $("#bestLine").textContent = bestMessage;
+
+        launchConfetti();
+
+        window.clearTimeout(winModalTimer);
+        winModalTimer = window.setTimeout(() => {
+          if (state.status === "won") {
+            openModal(winLayer, $("#playAgainBtn"));
+          }
+        }, 430);
+      }
+
+      function readBestTimes() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const data = raw ? JSON.parse(raw) : {};
+          return data && typeof data === "object" ? data : {};
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function writeBestTimes(data) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (error) {
+          /* Private browsing can make storage unavailable. */
+        }
+      }
+
+      function launchConfetti() {
+        if (
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          return;
+        }
+
+        const colors = ["#2f6bff", "#63d6b4", "#ffbf5a", "#ff7d8a", "#8d7bff", "#ffffff"];
+        confettiEl.textContent = "";
+
+        for (let i = 0; i < 34; i++) {
+          const piece = document.createElement("span");
+          piece.className = "confetti-piece";
+          piece.style.left = Math.random() * 100 + "%";
+          piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+          piece.style.width = 5 + Math.random() * 5 + "px";
+          piece.style.height = 8 + Math.random() * 8 + "px";
+          piece.style.setProperty("--drift", Math.random() * 160 - 80 + "px");
+          piece.style.animationDelay = Math.random() * 0.55 + "s";
+          piece.style.animationDuration = 2.1 + Math.random() * 1.5 + "s";
+          confettiEl.appendChild(piece);
+        }
+
+        window.setTimeout(() => {
+          confettiEl.textContent = "";
+        }, 4200);
+      }
+
+      /* =====================================================================
+         Misc UI
+         ===================================================================== */
+
+      function showToast(text, duration) {
+        window.clearTimeout(toastTimer);
+        toastEl.textContent = text;
+        toastEl.classList.add("show");
+        toastTimer = window.setTimeout(
+          () => toastEl.classList.remove("show"),
+          duration || 1600
+        );
+      }
+
+      function hideToast() {
+        window.clearTimeout(toastTimer);
+        toastEl.classList.remove("show");
+      }
+
+      function navigate(deltaRow, deltaCol) {
+        if (state.status !== "playing") return;
+        let index = state.selected;
+        if (index < 0) index = firstEditableIndex();
+        const row = (rowOf(index) + deltaRow + 9) % 9;
+        const col = (colOf(index) + deltaCol + 9) % 9;
+        const next = row * 9 + col;
+        state.selected = next;
+        renderBoard();
+        updateControls();
+        cellEls[next].focus({ preventScroll: true });
+      }
+
+      /* =====================================================================
+         Event binding
+         ===================================================================== */
+
+      function bindEvents() {
+        difficultyButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const key = button.dataset.diff;
+            if (!key || key === state.difficulty) return;
+            requestNewGame(key);
+          });
+        });
+
+        newGameBtn.addEventListener("click", () => {
+          requestNewGame(state.difficulty);
+        });
+
+        helpBtn.addEventListener("click", openHelp);
+        $("#helpClose").addEventListener("click", closeHelp);
+        $("#helpDone").addEventListener("click", closeHelp);
+        $("#helpBackdrop").addEventListener("click", closeHelp);
+
+        $("#confirmCancel").addEventListener("click", cancelConfirm);
+        $("#confirmBackdrop").addEventListener("click", cancelConfirm);
+        $("#confirmNew").addEventListener("click", confirmNewGame);
+
+        $("#playAgainBtn").addEventListener("click", () => {
+          closeAllModals(false);
+          startNewGame(state.difficulty);
+        });
+        $("#closeWinBtn").addEventListener("click", () => {
+          closeModal(winLayer);
+        });
+
+        notesBtn.addEventListener("click", toggleNotes);
+        undoBtn.addEventListener("click", undoMove);
+        hintBtn.addEventListener("click", useHint);
+        eraseBtn.addEventListener("click", eraseSelected);
+
+        numberButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            inputNumber(Number(button.dataset.num));
+          });
+        });
+
+        timerChip.addEventListener("click", () => {
+          if (state.status === "playing") pauseGame(false);
+          else if (state.status === "paused") resumeGame();
+        });
+        resumeBtn.addEventListener("click", resumeGame);
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden && state.status === "playing") {
+            pauseGame(true);
+          }
+        });
+
+        window.addEventListener("resize", () => {
+          window.requestAnimationFrame(updateBoardMetrics);
+        });
+        window.addEventListener("orientationchange", () => {
+          window.setTimeout(updateBoardMetrics, 180);
+        });
+
+        if ("ResizeObserver" in window) {
+          const observer = new ResizeObserver(() => updateBoardMetrics());
+          observer.observe(boardEl);
+        }
+
+        document.addEventListener("keydown", handleKeydown);
+      }
+
+      function handleKeydown(event) {
+        if (event.key === "Escape") {
+          if (activeModal === helpLayer) {
+            event.preventDefault();
+            closeHelp();
+            return;
+          }
+          if (activeModal === confirmLayer) {
+            event.preventDefault();
+            cancelConfirm();
+            return;
+          }
+          if (activeModal === winLayer) {
+            event.preventDefault();
+            closeModal(winLayer);
+            return;
+          }
+          if (!activeModal && state.status === "paused") {
+            event.preventDefault();
+            resumeGame();
+            return;
+          }
+        }
+
+        if (activeModal) return;
+        if (state.status === "paused") {
+          if (event.key === " " || event.key === "Enter") {
+            event.preventDefault();
+            resumeGame();
+          }
+          return;
+        }
+        if (state.status !== "playing") return;
+
+        const onButton = event.target instanceof Element && !!event.target.closest("button");
+
+        if (/^[1-9]$/.test(event.key)) {
+          event.preventDefault();
+          inputNumber(Number(event.key));
+          return;
+        }
+        if (event.key === "Backspace" || event.key === "Delete" || event.key === "0") {
+          event.preventDefault();
+          eraseSelected();
+          return;
+        }
+        if (event.key === "n" || event.key === "N") {
+          event.preventDefault();
+          toggleNotes();
+          return;
+        }
+        if ((event.key === "z" || event.key === "Z") && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          undoMove();
+          return;
+        }
+        if (event.key === "h" || event.key === "H") {
+          event.preventDefault();
+          useHint();
+          return;
+        }
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          navigate(-1, 0);
+          return;
+        }
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          navigate(1, 0);
+          return;
+        }
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          navigate(0, -1);
+          return;
+        }
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          navigate(0, 1);
+          return;
+        }
+        if (event.key === " " && !onButton) {
+          event.preventDefault();
+          pauseGame(false);
+        }
+      }
+
+      /* =====================================================================
+         Init
+         ===================================================================== */
+
+      buildBoard();
+      bindEvents();
+      syncDifficultyButtons();
+      updateStats();
+      updateTimerLabel();
+      updateControls();
+
+      window.requestAnimationFrame(() => {
+        updateBoardMetrics();
+        startNewGame("medium");
+      });
+
+      // Optional inspection hook for local testing: open index.html?debug=1
+      if (new URLSearchParams(window.location.search).has("debug")) {
+        window.__sudoku = {
+          state: state,
+          startNewGame: startNewGame,
+          inputNumber: inputNumber,
+          selectCell: selectCell,
+          useHint: useHint,
+          undoMove: undoMove,
+          eraseSelected: eraseSelected,
+          checkWin: checkWin
+        };
+      }
+    })();
+  </script>
+</body>
+</html>
